@@ -66,6 +66,7 @@
                 <button class="btn btn-primary" id="applyFilter">Применить</button>
                 <button class="btn btn-secondary" id="resetFilter">Сбросить</button>
                 <button class="btn btn-secondary" id="exportCsv">Экспорт CSV</button>
+                <button class="btn btn-raffle" id="raffleBtn">🎰 Розыгрыш</button>
             </div>
             <div class="filters-row">
                 <div class="auto-refresh">
@@ -134,6 +135,40 @@
     <div id="loading" class="loading-overlay">
         <div class="spinner"></div>
         <p id="loadingText">Загрузка данных...</p>
+    </div>
+
+    <!-- Raffle Modal -->
+    <div id="raffleModal" class="raffle-modal hidden">
+        <div class="raffle-backdrop"></div>
+        <div class="raffle-card">
+            <button class="raffle-close" id="raffleClose">✕</button>
+            <div class="raffle-header">
+                <div class="raffle-icon">🎰</div>
+                <h2 class="raffle-title">Розыгрыш</h2>
+                <p class="raffle-subtitle" id="raffleSubtitle">Крутим барабан...</p>
+            </div>
+
+            <div class="raffle-drum-wrap">
+                <div class="raffle-drum" id="raffleDrum">
+                    <div class="raffle-drum-item" id="raffleDrumItem">—</div>
+                </div>
+                <div class="raffle-drum-shine"></div>
+            </div>
+
+            <div class="raffle-winner hidden" id="raffleWinner">
+                <div class="raffle-winner-label">🏆 Победитель</div>
+                <a class="raffle-winner-addr" id="raffleWinnerAddr" target="_blank"></a>
+                <div class="raffle-winner-stats" id="raffleWinnerStats"></div>
+                <button class="btn btn-primary raffle-copy-btn" id="raffleCopyBtn">📋 Копировать адрес</button>
+            </div>
+
+            <div class="raffle-actions">
+                <button class="btn btn-raffle raffle-spin-btn" id="raffleSpinBtn">Крутить!</button>
+                <p class="raffle-pool-info" id="rafflePoolInfo"></p>
+            </div>
+
+            <div class="raffle-particles" id="raffleParticles"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>

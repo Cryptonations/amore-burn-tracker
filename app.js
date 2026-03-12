@@ -474,6 +474,121 @@ function copyText(text) {
     navigator.clipboard.writeText(text).then(() => showToast('Скопировано'));
 }
 
+// ===== Raffle =====
+
+const RAFFLE_COLORS = ['#c084fc','#a855f7','#e879f9','#f0abfc','#7c3aed','#ff6b35','#fbbf24'];
+
+function openRaffle() {
+    const stats = computeStats(state.filteredTransfers);
+    const uniqueWallets = [...new Set(stats.parsed.map(p => p.senderFriendly))];
+
+    const modal = document.getElementById('raffleModal');
+    const poolInfo = document.getElementById('rafflePoolInfo');
+    const winner = document.getElementById('raffleWinner');
+    const drumItem = document.getElementById('raffleDrumItem');
+
+    winner.classList.add('hidden');
+    drumItem.textContent = uniqueWallets.length > 0 ? '?' : '—';
+    poolInfo.textContent = uniqueWallets.length > 0
+        ? `${uniqueWallets.length} уникальных кошельков в пуле`
+        : 'Нет данных — выберите период';
+    document.getElementById('raffleSubtitle').textContent = 'Выбери победителя из текущего фильтра';
+    document.getElementById('raffleParticles').innerHTML = '';
+    document.getElementById('raffleSpinBtn').disabled = uniqueWallets.length === 0;
+
+    modal.classList.remove('hidden');
+}
+
+function closeRaffle() {
+    document.getElementById('raffleModal').classList.add('hidden');
+}
+
+function spawnParticles() {
+    const container = document.getElementById('raffleParticles');
+    container.innerHTML = '';
+    const cx = container.offsetWidth / 2;
+    const cy = container.offsetHeight / 2;
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const angle = Math.random() * 2 * Math.PI;
+        const dist = 80 + Math.random() * 160;
+        p.style.cssText = `
+            left:${cx}px; top:${cy}px;
+            background:${RAFFLE_COLORS[Math.floor(Math.random() * RAFFLE_COLORS.length)]};
+            --tx:${Math.cos(angle) * dist}px;
+            --ty:${Math.sin(angle) * dist}px;
+            animation-delay:${Math.random() * 0.2}s;
+            width:${4 + Math.random() * 8}px;
+            height:${4 + Math.random() * 8}px;
+        `;
+        container.appendChild(p);
+    }
+}
+
+function runRaffle() {
+    const stats = computeStats(state.filteredTransfers);
+    const uniqueWallets = [...new Set(stats.parsed.map(p => p.senderFriendly))];
+    if (uniqueWallets.length === 0) return;
+
+    const spinBtn = document.getElementById('raffleSpinBtn');
+    const drumWrap = document.getElementById('raffleDrum').parentElement;
+    const drumItem = document.getElementById('raffleDrumItem');
+    const winnerEl = document.getElementById('raffleWinner');
+
+    spinBtn.disabled = true;
+    winnerEl.classList.add('hidden');
+    drumWrap.classList.add('spinning');
+    document.getElementById('raffleSubtitle').textContent = 'Крутим барабан...';
+
+    // Pick winner upfront, animate for drama
+    const winnerAddr = uniqueWallets[Math.floor(Math.random() * uniqueWallets.length)];
+    const totalSpins = 30 + Math.floor(Math.random() * 20);
+    let spin = 0;
+
+    function tick() {
+        // Show random wallets
+        const r = uniqueWallets[Math.floor(Math.random() * uniqueWallets.length)];
+        drumItem.textContent = shortAddr(r);
+
+        spin++;
+        // Gradually slow down
+        const delay = spin < totalSpins * 0.6
+            ? 50
+            : spin < totalSpins * 0.85
+                ? 100
+                : 180;
+
+        if (spin < totalSpins) {
+            setTimeout(tick, delay);
+        } else {
+            // Reveal winner
+            drumWrap.classList.remove('spinning');
+            drumItem.textContent = shortAddr(winnerAddr);
+            document.getElementById('raffleSubtitle').textContent = '🎉 Победитель определён!';
+
+            // Compute winner stats
+            const winnerTx = stats.parsed.filter(p => p.senderFriendly === winnerAddr);
+            const winnerTotal = winnerTx.reduce((s, p) => s + p.amountNum, 0);
+            const symbol = state.jettonInfo?.symbol || '';
+
+            document.getElementById('raffleWinnerAddr').textContent = winnerAddr;
+            document.getElementById('raffleWinnerAddr').href = `${CONFIG.TONVIEWER}/${winnerAddr}`;
+            document.getElementById('raffleWinnerStats').textContent =
+                `${winnerTx.length} транзакций · ${winnerTotal.toLocaleString('ru-RU', {maximumFractionDigits: 2})} ${symbol}`;
+            document.getElementById('raffleCopyBtn').onclick = () =>
+                navigator.clipboard.writeText(winnerAddr).then(() => showToast('Адрес скопирован!'));
+
+            winnerEl.classList.remove('hidden');
+            spawnParticles();
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'Ещё раз!';
+        }
+    }
+
+    tick();
+}
+
 // ===== Event Listeners =====
 
 function setupListeners() {
@@ -495,6 +610,14 @@ function setupListeners() {
     // Enter key in search field triggers filter
     document.getElementById('walletSearch').addEventListener('keydown', e => {
         if (e.key === 'Enter') applyFilters();
+    });
+
+    // Raffle
+    document.getElementById('raffleBtn').addEventListener('click', openRaffle);
+    document.getElementById('raffleClose').addEventListener('click', closeRaffle);
+    document.getElementById('raffleSpinBtn').addEventListener('click', runRaffle);
+    document.getElementById('raffleModal').addEventListener('click', e => {
+        if (e.target.classList.contains('raffle-backdrop')) closeRaffle();
     });
 }
 
