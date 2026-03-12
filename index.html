@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMORE Burn Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="fire-icon">🔥</div>
+            <h1 id="appTitle">Burn Tracker</h1>
+            <p class="subtitle">Отслеживание сжигания токенов в сети TON</p>
+        </header>
+
+        <section class="address-info">
+            <div class="info-row">
+                <span class="info-label">Burn Address:</span>
+                <code class="info-value" id="burnAddr"></code>
+                <button class="copy-btn" onclick="copyText('UQAWJJLBJHWTRQtYovzGLNdSCgTReFx6QrOs0iejbmWtTVDh')" title="Копировать">📋</button>
+                <a class="ext-link" href="https://tonviewer.com/UQAWJJLBJHWTRQtYovzGLNdSCgTReFx6QrOs0iejbmWtTVDh" target="_blank" title="Открыть в TonViewer">↗</a>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Token Contract:</span>
+                <code class="info-value" id="tokenAddr"></code>
+                <button class="copy-btn" onclick="copyText('EQC7js8NLX3v57ZuRmuusNtMSBdki4va_qyL7sAwdmosf_xK')" title="Копировать">📋</button>
+                <a class="ext-link" href="https://tonviewer.com/EQC7js8NLX3v57ZuRmuusNtMSBdki4va_qyL7sAwdmosf_xK" target="_blank" title="Открыть в TonViewer">↗</a>
+            </div>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Всего сожжено</span>
+                <span class="stat-value" id="totalBurned">&mdash;</span>
+                <span class="stat-sub" id="burnPercent"></span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Уникальных кошельков</span>
+                <span class="stat-value" id="uniqueWallets">&mdash;</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Всего транзакций</span>
+                <span class="stat-value" id="totalTx">&mdash;</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Последнее сжигание</span>
+                <span class="stat-value" id="lastBurn">&mdash;</span>
+            </div>
+        </section>
+
+        <section class="filters">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="dateFrom">С:</label>
+                    <input type="date" id="dateFrom">
+                </div>
+                <div class="filter-group">
+                    <label for="dateTo">По:</label>
+                    <input type="date" id="dateTo">
+                </div>
+                <div class="filter-group filter-group-search">
+                    <label for="walletSearch">Кошелёк:</label>
+                    <input type="text" id="walletSearch" placeholder="UQ... или часть адреса">
+                </div>
+                <button class="btn btn-primary" id="applyFilter">Применить</button>
+                <button class="btn btn-secondary" id="resetFilter">Сбросить</button>
+                <button class="btn btn-secondary" id="exportCsv">Экспорт CSV</button>
+            </div>
+            <div class="filters-row">
+                <div class="auto-refresh">
+                    <label for="autoRefreshToggle">Автообновление:</label>
+                    <select id="autoRefreshInterval">
+                        <option value="0">Выкл</option>
+                        <option value="60">1 мин</option>
+                        <option value="180">3 мин</option>
+                        <option value="300" selected>5 мин</option>
+                        <option value="600">10 мин</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" id="autoRefreshToggle">Включить</button>
+                    <span class="auto-refresh-status" id="autoRefreshStatus"></span>
+                </div>
+                <button class="btn btn-secondary" id="refreshBtn">Обновить сейчас</button>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <h2>Транзакции сжигания</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Кошелёк отправителя</th>
+                            <th>Количество</th>
+                            <th>Дата и время</th>
+                            <th>Tx</th>
+                        </tr>
+                    </thead>
+                    <tbody id="burnTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination" style="display:none;">
+                <button class="btn btn-primary" id="loadMoreBtn">Показать ещё</button>
+                <span class="pagination-info" id="paginationInfo"></span>
+            </div>
+        </section>
+
+        <section class="top-burners-section">
+            <h2>Топ отправителей</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Кошелёк</th>
+                            <th>Всего отправлено</th>
+                            <th>Транзакций</th>
+                            <th>% от общего</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topBurnersBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer>
+            <p>Данные из <a href="https://toncenter.com" target="_blank">TON Center API</a> &middot; Ссылки ведут на <a href="https://tonviewer.com" target="_blank">TonViewer</a></p>
+        </footer>
+    </div>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loadingText">Загрузка данных...</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
